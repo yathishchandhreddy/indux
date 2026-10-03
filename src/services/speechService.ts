@@ -128,49 +128,89 @@ export class SpeechService {
     onEnd?: () => void,
     onError?: (err: any) => void
   ) {
-    if (!this.synth) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
       if (onError) onError('Speech synthesis not available');
       return;
     }
 
-    // Cancel any active utterance
-    this.synth.cancel();
+    const synth = window.speechSynthesis;
 
-    // Clean text of markdown asterisks or technical formatting for smooth speech
+    // Cancel any active utterance
+    try {
+      synth.cancel();
+      if (synth.paused) {
+        synth.resume();
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // Clean text of markdown asterisks, hashtags, urls, or technical formatting for smooth speech
     const cleanText = text
       .replace(/[*#_~`\[\]]/g, ' ')
       .replace(/https?:\/\/\S+/g, '')
+      .replace(/[🌾💧🔎👨‍🌾🌧💰🌱🐛👋🎙️🔊]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
+
+    if (!cleanText) {
+      if (onEnd) onEnd();
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const targetLocale = this.getLocale(lang);
     utterance.lang = targetLocale;
-    utterance.rate = 0.95; // Slightly slower pace for clear agricultural understanding
+    utterance.rate = 0.95; // Slightly slower, natural cadence for rural agricultural advisory
     utterance.pitch = 1.0;
 
-    // Search for best matching voice (specifically Tamil ta-IN voice)
-    const voices = this.synth.getVoices();
-    const matchingVoice = voices.find(v => v.lang === targetLocale || v.lang.startsWith(lang));
-    if (matchingVoice) {
-      utterance.voice = matchingVoice;
+    const setVoiceAndSpeak = () => {
+      try {
+        const voices = synth.getVoices();
+        // Priority: exact locale match (e.g. ta-IN) -> language match (e.g. ta) -> Indian English or default
+        const matchingVoice =
+          voices.find(v => v.lang === targetLocale) ||
+          voices.find(v => v.lang.startsWith(lang)) ||
+          voices.find(v => v.lang.includes('IN'));
+
+        if (matchingVoice) {
+          utterance.voice = matchingVoice;
+        }
+      } catch {}
+
+      utterance.onstart = () => {
+        if (onStart) onStart();
+      };
+
+      utterance.onend = () => {
+        if (onEnd) onEnd();
+      };
+
+      utterance.onerror = (e) => {
+        console.warn('TTS utterance error:', e);
+        if (onEnd) onEnd();
+        if (onError) onError(e);
+      };
+
+      synth.speak(utterance);
+    };
+
+    const voices = synth.getVoices();
+    if (voices.length > 0) {
+      setVoiceAndSpeak();
+    } else {
+      // Handle asynchronous voice loading in Chromium
+      const handleVoicesChanged = () => {
+        synth.removeEventListener('voiceschanged', handleVoicesChanged);
+        setVoiceAndSpeak();
+      };
+      synth.addEventListener('voiceschanged', handleVoicesChanged);
+      // Fallback timeout in case voiceschanged doesn't trigger
+      setTimeout(() => {
+        synth.removeEventListener('voiceschanged', handleVoicesChanged);
+        setVoiceAndSpeak();
+      }, 250);
     }
-
-    utterance.onstart = () => {
-      if (onStart) onStart();
-    };
-
-    utterance.onend = () => {
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      console.warn('TTS utterance error:', e);
-      if (onEnd) onEnd();
-      if (onError) onError(e);
-    };
-
-    this.synth.speak(utterance);
   }
 
   // Stop speaking

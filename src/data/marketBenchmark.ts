@@ -2,6 +2,22 @@ import { MarketPriceRecord } from '../types';
 
 export const BENCHMARK_MARKET_PRICES: MarketPriceRecord[] = [
   {
+    id: 'mkt-paddy-demo',
+    crop: 'Paddy',
+    cropTamil: 'நெல் (Paddy)',
+    variety: 'பொன்னி ரகம் (Ponni Medium)',
+    state: 'Tamil Nadu',
+    district: 'Karur',
+    marketName: 'Demo Market (மாதிரி ஒழுங்குமுறை விற்பனைக்கூடம்)',
+    minPrice: 2280,
+    maxPrice: 2650,
+    modalPrice: 2480,
+    priceDate: 'Today',
+    trend: 'up',
+    arrivalVolumeTonnes: 150,
+    source: 'demo',
+  },
+  {
     id: 'mkt-paddy-karur',
     crop: 'Paddy',
     cropTamil: 'நெல் (பொன்னி / ADT 45)',

@@ -77,12 +77,12 @@ export const MarketPrices: React.FC = () => {
     }
   };
 
-  const handleAskAIMarket = async (record?: MarketPriceRecord) => {
+  const handleAskAIMarket = async (record?: MarketPriceRecord, customPrompt?: string) => {
     setAnalyzingMarket(true);
     const targetCrop = record ? record.crop : farmerProfile.mainCrop;
-    const targetMkt = record ? record.marketName : farmerProfile.district;
+    const targetMkt = record ? record.marketName : 'Demo Market (மாதிரி சந்தை)';
 
-    const question = `என் ${targetCrop} பயிருக்கு எங்கு சிறந்த விலை பெறலாம்? ${targetMkt} சந்தை நிலவரத்தை அடிப்படையாக வைத்து விற்பனை யோசனை கூறவும்.`;
+    const question = customPrompt || `இந்த மாதிரி சந்தை விலையில் (சராசரி ₹${record?.modalPrice || 2480}/குவிண்டால்) நான் என்ன செய்யலாம்? சந்தை விலை வாய்ப்புகளை எவ்வாறு அணுகுவது என விளக்கவும். (இது மாதிரி சந்தை விலை என்பதால் நிஜ நேரலை விலையாக தவறாக கருதக் கூடாது என தெளிவுபடுத்தவும்).`;
 
     try {
       const res = await ApiClient.sendChatMessage({
@@ -94,7 +94,7 @@ export const MarketPrices: React.FC = () => {
         isDemo: true,
       });
 
-      setMarketAdviceModal(res.response + (res.structuredAdvice?.immediateSteps ? `\n\nவிற்பனை வழிகள்:\n• ` + res.structuredAdvice.immediateSteps.join('\n• ') : ''));
+      setMarketAdviceModal(res.response + (res.structuredAdvice?.immediateSteps ? `\n\nசந்தை விற்பனை வழிகாட்டல்:\n• ` + res.structuredAdvice.immediateSteps.join('\n• ') : ''));
     } catch (e) {
       setMarketAdviceModal('சந்தை AI ஆலோசனை தற்போது பெற முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.');
     } finally {
@@ -131,10 +131,94 @@ export const MarketPrices: React.FC = () => {
         <Info className="w-4 h-4 text-emerald-800 shrink-0 mt-0.5" />
         <div>
           <strong className="text-slate-900 block font-bold">
-            {isConfigured ? 'நேரலை சந்தை தகவல் (Live Agmarknet Data)' : 'உழவர் சந்தை & ஒழுங்குமுறை விற்பனைக்கூட மாதிரி விலைகள் (Mandi Benchmarks)'}
+            {isConfigured ? '🟢 நேரலை சந்தை தகவல் (Live Agmarknet Data)' : '🟡 DEMO MARKET DATA - மாதிரி சந்தை விலைகள்'}
           </strong>
           <span>{sourceNotice}</span>
         </div>
+      </div>
+
+      {/* Featured Hackathon Demo Market Card as explicitly requested */}
+      <div className="bg-gradient-to-br from-emerald-900 via-emerald-850 to-emerald-950 text-white rounded-3xl p-6 shadow-xl border border-emerald-700/80 mb-6 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-700/80">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-amber-400 text-slate-900 text-xs font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                🟡 DEMO MARKET DATA
+              </span>
+              <span className="text-[11px] text-emerald-300">
+                (ஹேக்கத்தான் மாதிரி சந்தை)
+              </span>
+            </div>
+            <h3 className="text-2xl font-black font-serif text-white flex items-center gap-2">
+              <span>🌾 நெல் (Paddy)</span>
+            </h3>
+            <div className="flex items-center gap-2 text-xs text-emerald-200 mt-1">
+              <span className="flex items-center gap-1 font-semibold text-amber-300">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>📍 தமிழ்நாடு (Tamil Nadu)</span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1 font-medium">
+                <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>🏪 Demo Market (மாதிரி சந்தை)</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Action button requested: இந்த விலையில் நான் என்ன செய்யலாம்? */}
+          <button
+            onClick={() =>
+              handleAskAIMarket(
+                {
+                  id: 'demo-featured',
+                  crop: 'Paddy',
+                  cropTamil: 'நெல்',
+                  variety: 'பொன்னி',
+                  state: 'Tamil Nadu',
+                  district: 'Karur',
+                  marketName: 'Demo Market',
+                  minPrice: 2280,
+                  maxPrice: 2650,
+                  modalPrice: 2480,
+                  priceDate: 'Today',
+                  trend: 'up',
+                  source: 'demo',
+                },
+                'இந்த மாதிரி சந்தை விலையில் (குறைந்த விலை ₹2,280, சராசரி விலை ₹2,480, அதிகபட்ச விலை ₹2,650) ஒரு விவசாயியாக நான் என்ன செய்யலாம்? தானியத்தை காய வைத்து நல்ல விலைக்கு விற்பது அல்லது ஒழுங்குமுறை கூடத்தில் விற்பது பற்றி ஆலோசனை கூறவும். (இது மாதிரி சந்தை விலை என்பதை தெளிவுபடுத்தவும்).'
+              )
+            }
+            disabled={analyzingMarket}
+            className="self-start sm:self-center px-4 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-lg transition transform active:scale-95 flex items-center gap-2 border-2 border-amber-300"
+          >
+            <Sparkles className="w-4 h-4 text-slate-900" />
+            <span>இந்த விலையில் நான் என்ன செய்யலாம்?</span>
+          </button>
+        </div>
+
+        {/* 3 Prices: Min, Modal, Max */}
+        <div className="grid grid-cols-3 gap-3 pt-4 text-center">
+          <div className="bg-emerald-950/70 p-3 rounded-2xl border border-emerald-700/60">
+            <span className="text-[10px] text-emerald-300 uppercase block font-semibold">குறைந்த விலை (Min)</span>
+            <strong className="text-sm sm:text-base font-bold text-white">₹2,280</strong>
+            <span className="text-[9px] text-emerald-400 block">/குவிண்டால்</span>
+          </div>
+
+          <div className="bg-emerald-950/90 p-3 rounded-2xl border-2 border-amber-400/80 shadow-inner">
+            <span className="text-[10px] text-amber-300 uppercase block font-black">சராசரி விலை (Modal)</span>
+            <strong className="text-base sm:text-xl font-black text-amber-300">₹2,480</strong>
+            <span className="text-[9px] text-amber-200/90 block font-bold">/குவிண்டால்</span>
+          </div>
+
+          <div className="bg-emerald-950/70 p-3 rounded-2xl border border-emerald-700/60">
+            <span className="text-[10px] text-emerald-300 uppercase block font-semibold">அதிகபட்ச விலை (Max)</span>
+            <strong className="text-sm sm:text-base font-bold text-white">₹2,650</strong>
+            <span className="text-[9px] text-emerald-400 block">/குவிண்டால்</span>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-emerald-300/80 mt-3 text-center italic font-sans">
+          * குறிப்பு: இந்த விலைகள் ஹேக்கத்தான் மாதிரி மதிப்பீட்டிற்கானவை மட்டுமே (DEMO MARKET DATA). நேரலை உழவர் சந்தை விலைகளாக கருத வேண்டாம்.
+        </p>
       </div>
 
       {/* Filter Row */}

@@ -56,8 +56,8 @@ interface AppContextType {
 
 const DEFAULT_PROFILE: FarmerProfile = {
   id: 'farmer-default',
-  name: 'Yathish',
-  village: 'Thottiyam',
+  name: 'ரவி (Ravi)',
+  village: 'தொட்டியம் (Thottiyam)',
   district: 'Karur',
   state: 'Tamil Nadu',
   preferredLanguage: 'ta',
@@ -77,7 +77,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [farmerProfile, setFarmerProfileState] = useState<FarmerProfile>(() => {
     try {
       const saved = localStorage.getItem('uzhavan_farmer_profile');
-      return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.name === 'Yathish' || !parsed.name) {
+          return DEFAULT_PROFILE;
+        }
+        return parsed;
+      }
+      return DEFAULT_PROFILE;
     } catch {
       return DEFAULT_PROFILE;
     }
@@ -106,13 +113,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {
         id: 'msg-initial-welcome',
         sender: 'assistant',
-        text: 'வணக்கம்! நான் உழவன் குரல். உங்கள் விவசாயப் பயிர்கள், பூச்சி மேலாண்மை, உரம், பாசனம் அல்லது சந்தை விலை பற்றி என்னிடம் குரலில் அல்லது எழுதி கேட்கலாம்.',
+        text: 'வணக்கம் ரவி 👋\nஉங்கள் விவசாயத்திற்கு என்ன உதவி வேண்டும்?',
         language: 'ta',
         timestamp: new Date().toISOString(),
         structuredAdvice: {
-          summary: 'வணக்கம்! நான் உங்கள் உழவன் குரல் விவசாயத் தோழன்.',
+          summary: 'வணக்கம் ரவி! உங்கள் பயிர், உரம், பூச்சி தாக்குதல், வானிலை அல்லது சந்தை நிலவரம் பற்றி என்னிடம் குரலில் கேளுங்கள்.',
           immediateSteps: [
-            'மைக் பொத்தானை அழுத்தி பேசத் தொடங்கலாம்',
+            'பெரிய மைக் பொத்தானை தொட்டு பேசலாம்',
             'கீழே உள்ள விரைவு கேள்விகளை தேர்ந்தெடுக்கலாம்',
             'பயிர் இலையின் புகைப்படத்தை பதிவேற்றி நோய் அறியலாம்',
           ],

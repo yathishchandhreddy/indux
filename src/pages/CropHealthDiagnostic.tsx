@@ -283,19 +283,47 @@ export const CropHealthDiagnostic: React.FC = () => {
                 </div>
               )}
 
+              {/* Observed Symptoms */}
+              {diagnosisResult.observedSymptoms && (
+                <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200">
+                  <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span>👁 கண்டறியப்பட்ட அறிகுறிகள் (Observed Symptoms)</span>
+                  </h5>
+                  <ul className="text-xs text-slate-700 space-y-1 list-disc pl-4">
+                    {diagnosisResult.observedSymptoms.map((s: string, idx: number) => (
+                      <li key={idx}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Immediate Low-Risk Steps */}
               {diagnosisResult.immediateSteps && (
                 <div className="bg-emerald-50/80 rounded-2xl p-3.5 border border-emerald-200">
                   <h5 className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>உடனடி குறைந்த ஆபத்து தீர்வுகள் (Immediate Steps)</span>
+                    <span>உடனடி குறைந்த ஆபத்து தீர்வுகள் (Low-risk Immediate Steps)</span>
                   </h5>
-                  <ul className="text-xs text-emerald-950 space-y-1.5">
+                  <ul className="text-xs text-emerald-950 space-y-1.5 font-medium">
                     {diagnosisResult.immediateSteps.map((step: string, idx: number) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <span className="font-bold text-emerald-700 shrink-0">✓</span>
                         <span>{step}</span>
                       </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Additional Information Needed */}
+              {diagnosisResult.additionalInfoNeeded && (
+                <div className="bg-amber-50/60 rounded-2xl p-3 border border-amber-200/80 text-xs text-amber-950">
+                  <strong className="block font-bold text-amber-900 mb-1">
+                    ❓ தேவைப்படும் கூடுதல் விவரங்கள் (What Additional Info is Needed):
+                  </strong>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    {diagnosisResult.additionalInfoNeeded.map((info: string, idx: number) => (
+                      <li key={idx}>{info}</li>
                     ))}
                   </ul>
                 </div>

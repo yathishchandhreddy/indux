@@ -91,15 +91,23 @@ export const WeatherDashboard: React.FC = () => {
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-emerald-950 font-serif flex items-center gap-2">
             <span>{t.weatherTitle}</span>
-          </h2>
-          <p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-emerald-700" />
-            <span>{farmerProfile.district}, {farmerProfile.state}</span>
-            {weatherData?.isLive && (
-              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
-                LIVE
+            {weatherData?.isLive ? (
+              <span className="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                <span>🟢 LIVE WEATHER</span>
+              </span>
+            ) : (
+              <span className="bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-amber-600"></span>
+                <span>🟡 DEMO WEATHER</span>
               </span>
             )}
+          </h2>
+          <p className="text-xs text-slate-600 mt-1 flex items-center gap-1.5 font-medium">
+            <MapPin className="w-3.5 h-3.5 text-emerald-700" />
+            <span>{farmerProfile.district}, {farmerProfile.state}</span>
+            <span className="text-slate-400">•</span>
+            <span>{weatherData?.isLive ? 'OpenWeatherMap நேரலை இணைப்பு' : 'மாதிரி பருவநிலை தரவு (Demonstration Data)'}</span>
           </p>
         </div>
 
@@ -113,18 +121,16 @@ export const WeatherDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Unconfigured / Missing API state notice */}
-      {!weatherData && (
-        <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200 mb-5 text-amber-900">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-bold">Weather API Not Configured</h4>
-              <p className="text-xs text-amber-800 mt-1">
-                Live weather data unavailable. Please configure OpenWeatherMap API in <code>.env</code> with <code>OPENWEATHER_API_KEY</code>.
-                In Demo Mode, representative seasonal Tamil Nadu agromet readings are displayed for evaluation.
-              </p>
-            </div>
+      {/* Clear Transparency Banner */}
+      {!weatherData?.isLive && (
+        <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 mb-5 text-amber-950 flex items-start gap-3 text-xs">
+          <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+          <div>
+            <strong className="block font-bold text-amber-900 mb-0.5">🟡 DEMO WEATHER DATA</strong>
+            <p>
+              நேரலை OpenWeatherMap API சாவி இல்லாததால், கரூர் மாவட்டத்திற்கான மாதிரி விவசாய வானிலை விபரங்கள் காட்டப்படுகின்றன. 
+              இந்த மதிப்புகள் மாதிரி மதிப்பீட்டிற்கானவை மட்டுமே; நிஜ நேரலை தரவுகளாக தவறாக கருத வேண்டாம்.
+            </p>
           </div>
         </div>
       )}

@@ -90,34 +90,127 @@ export const SettingsProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Mode Controls */}
+      {/* Mode Controls with prominent 🟢 DEMO MODE Toggle */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80">
-        <div className="flex items-center gap-2.5 mb-3">
-          <Sliders className="w-5 h-5 text-emerald-700" />
-          <h3 className="font-bold text-sm sm:text-base text-slate-900">பயன்முறை அமைப்பு (Operating Mode)</h3>
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+          <div className="flex items-center gap-2.5">
+            <Sliders className="w-5 h-5 text-emerald-700" />
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">பயன்முறை அமைப்பு (Operating Mode)</h3>
+          </div>
+          <span className={`text-xs font-black px-3 py-1 rounded-full flex items-center gap-1.5 ${
+            isDemoMode ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-slate-100 text-slate-700'
+          }`}>
+            <span>{isDemoMode ? '🟢 DEMO MODE ON' : 'LIVE API MODE'}</span>
+          </span>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200/70 gap-3">
           <div>
-            <span className="text-xs font-bold text-slate-900 block">
-              {isDemoMode ? 'மாதிரி பயன்முறை (DEMO MODE)' : 'நேரலை பயன்முறை (LIVE API MODE)'}
-            </span>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-slate-900 block">
+                {isDemoMode ? '🟢 DEMO MODE' : 'LIVE API MODE'}
+              </span>
+              <span className="text-[10px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
+                ஹேக்கத்தான் மாதிரி
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 mt-1">
               {isDemoMode
-                ? 'ஹேக்கத்தான் மதிப்பீட்டிற்காக சரிபார்க்கப்பட்ட தமிழ்நாடு வேளாண் தரவுகள் & RAG இயங்குகிறது.'
-                : 'உண்மையான Gemini, OpenWeatherMap, மற்றும் Agmarknet API அழைப்புகளை இயக்குகிறது.'}
+                ? 'ஹேக்கத்தான் மேடைக்காக: Gemini 3.8 Flash + Web Speech STT/TTS + மாதிரி வானிலை & மாதிரி மண்டி விலைகள் நம்பகமாக இயங்குகிறது.'
+                : 'உண்மையான வெளிப்புற OpenWeatherMap & Agmarknet API விசரணையுடன் இயங்குகிறது.'}
             </p>
           </div>
           <button
             onClick={() => setIsDemoMode(!isDemoMode)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
+            className={`shrink-0 px-5 py-2.5 rounded-2xl text-xs font-black transition shadow-md flex items-center gap-2 ${
               isDemoMode
-                ? 'bg-amber-500 text-slate-900 hover:bg-amber-400'
-                : 'bg-emerald-700 text-white hover:bg-emerald-800'
+                ? 'bg-emerald-700 text-white hover:bg-emerald-800 ring-2 ring-emerald-200'
+                : 'bg-amber-500 text-slate-900 hover:bg-amber-400'
             }`}
           >
-            {isDemoMode ? 'நேரலை பயன்முறைக்கு மாறுக' : 'மாதிரி பயன்முறைக்கு மாறுக'}
+            <span>{isDemoMode ? '🟢 DEMO MODE: ON' : 'DEMO MODE: OFF'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* Demo Dashboard requested specifically for hackathon judges */}
+      <div className="bg-gradient-to-br from-emerald-950 to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-lg border border-emerald-800">
+        <div className="flex items-center justify-between pb-3 border-b border-emerald-800/80 mb-4">
+          <div className="flex items-center gap-2">
+            <Server className="w-5 h-5 text-amber-400" />
+            <h3 className="font-bold text-sm sm:text-base text-white">
+              Demo Control Dashboard (ஹேக்கத்தான் நடுவர்கள் பார்வைக்கு)
+            </h3>
+          </div>
+          <span className="text-[10px] text-emerald-300 font-mono">STATUS OVERVIEW</span>
+        </div>
+        <p className="text-xs text-emerald-200/90 mb-4">
+          நேரலை (Live) மற்றும் மாதிரி (Demo fallback) அமைப்புகளின் வெளிப்படையான நிலவரம்:
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+          {/* AI */}
+          <div className="bg-emerald-900/60 p-3 rounded-2xl border border-emerald-700/60 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-emerald-300 uppercase block font-semibold">AI Assistant:</span>
+              <strong className="text-white text-xs block font-bold">Google Gemini (3.8 Flash)</strong>
+            </div>
+            <span className="text-xs font-black text-emerald-300 flex items-center gap-1 bg-emerald-950 px-2 py-1 rounded-lg">
+              🟢 Connected
+            </span>
+          </div>
+
+          {/* Weather */}
+          <div className="bg-emerald-900/60 p-3 rounded-2xl border border-emerald-700/60 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-emerald-300 uppercase block font-semibold">Weather Service:</span>
+              <strong className="text-white text-xs block font-bold">
+                {health?.services.openweather.configured ? 'OpenWeatherMap' : 'Karur Agromet'}
+              </strong>
+            </div>
+            <span className={`text-xs font-black flex items-center gap-1 bg-emerald-950 px-2 py-1 rounded-lg ${
+              health?.services.openweather.configured ? 'text-emerald-300' : 'text-amber-300'
+            }`}>
+              {health?.services.openweather.configured ? '🟢 Live' : '🟡 Demo Weather'}
+            </span>
+          </div>
+
+          {/* Voice Input */}
+          <div className="bg-emerald-900/60 p-3 rounded-2xl border border-emerald-700/60 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-emerald-300 uppercase block font-semibold">Voice Input (STT):</span>
+              <strong className="text-white text-xs block font-bold">Web Speech API (ta-IN)</strong>
+            </div>
+            <span className="text-xs font-black text-emerald-300 flex items-center gap-1 bg-emerald-950 px-2 py-1 rounded-lg">
+              🟢 Browser Voice
+            </span>
+          </div>
+
+          {/* Voice Output */}
+          <div className="bg-emerald-900/60 p-3 rounded-2xl border border-emerald-700/60 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-emerald-300 uppercase block font-semibold">Voice Output (TTS):</span>
+              <strong className="text-white text-xs block font-bold">SpeechSynthesis (Tamil)</strong>
+            </div>
+            <span className="text-xs font-black text-emerald-300 flex items-center gap-1 bg-emerald-950 px-2 py-1 rounded-lg">
+              🟢 Browser TTS
+            </span>
+          </div>
+
+          {/* Market */}
+          <div className="bg-emerald-900/60 p-3 rounded-2xl border border-emerald-700/60 flex items-center justify-between sm:col-span-2 lg:col-span-2">
+            <div>
+              <span className="text-[10px] text-emerald-300 uppercase block font-semibold">Market Mandi Data:</span>
+              <strong className="text-white text-xs block font-bold">
+                {health?.services.agmarknet.configured ? 'Agmarknet APMC Feed' : 'TN Regulated Market Benchmarks'}
+              </strong>
+            </div>
+            <span className={`text-xs font-black flex items-center gap-1 bg-emerald-950 px-2 py-1 rounded-lg ${
+              health?.services.agmarknet.configured ? 'text-emerald-300' : 'text-amber-300'
+            }`}>
+              {health?.services.agmarknet.configured ? '🟢 Live Data' : '🟡 Demo Data'}
+            </span>
+          </div>
         </div>
       </div>
 

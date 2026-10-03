@@ -71,12 +71,14 @@ export const VoiceAssistant: React.FC = () => {
     };
   }, []);
 
-  // Quick inquiry sample questions
+  // Quick inquiry sample questions matching Demo Scenario 1 & 2
   const quickQuestions = [
-    { text: 'என் நெல் வயலில் இலைகள் மஞ்சளாக மாறுது. என்ன செய்யலாம்?', topic: 'Paddy Yellowing', icon: '🌾' },
-    { text: 'நாளைக்கு மழை வருமா? நான் உரம் போடலாமா?', topic: 'Weather & Fertilizer', icon: '🌧' },
-    { text: 'கரூர் சந்தையில் நெல் விலை இப்போது எவ்வளவு?', topic: 'Market Price', icon: '💰' },
-    { text: 'காய்ப்புழு மற்றும் தண்டு துளைப்பானை இயற்கை முறையில் கட்டுப்படுத்துவது எப்படி?', topic: 'Pest Control', icon: '🐛' },
+    { text: 'என் நெல் வயலில் இலைகள் மஞ்சளாக மாறுது. என்ன செய்யலாம்?', topic: '🌾 இலைகள் மஞ்சளாதல் (Paddy Yellowing)', icon: '🌾' },
+    { text: 'நாளைக்கு மழை வருமா?', topic: '🌧 நாளைக்கு மழை வருமா?', icon: '🌧' },
+    { text: 'தண்ணீர் பாய்ச்சலாமா?', topic: '💧 தண்ணீர் பாய்ச்சலாமா?', icon: '💧' },
+    { text: 'நெல் விலை என்ன?', topic: '💰 நெல் விலை என்ன?', icon: '💰' },
+    { text: 'உரம் எப்போது போடலாம்?', topic: '🌱 உரம் எப்போது போடலாம்?', icon: '🌱' },
+    { text: 'பூச்சி பிரச்சனை', topic: '🐛 பூச்சி பிரச்சனை', icon: '🐛' },
   ];
 
   // Pipeline simulation helper
@@ -182,6 +184,9 @@ export const VoiceAssistant: React.FC = () => {
       updatePipelineSteps(4);
     }, 1250);
 
+    const isWeatherQuery = /மழை|வானிலை|rain|weather|தண்ணீர்/i.test(question);
+    const isMarketQuery = /விலை|price|சந்தை|market|மண்டி/i.test(question);
+
     try {
       const result = await ApiClient.sendChatMessage({
         message: question,
@@ -196,6 +201,9 @@ export const VoiceAssistant: React.FC = () => {
       updatePipelineSteps(5);
       setVoiceState('answer');
 
+      const isDemoWeather = isWeatherQuery && (!weatherData?.isLive || weatherData?.isDemo);
+      const isDemoMarket = isMarketQuery;
+
       const assistantMsg: ChatMessage = {
         id: 'msg-' + (Date.now() + 1),
         sender: 'assistant',
@@ -204,6 +212,8 @@ export const VoiceAssistant: React.FC = () => {
         sourcesRetrieved: result.sourcesRetrieved,
         language: (result as any).detectedLanguage || language,
         timestamp: new Date().toISOString(),
+        isDemoData: isDemoWeather || isDemoMarket,
+        demoDataType: isDemoWeather ? 'weather' : isDemoMarket ? 'market' : undefined,
       };
 
       addMessage(assistantMsg);
@@ -259,42 +269,52 @@ export const VoiceAssistant: React.FC = () => {
     setTimeout(() => setSaveSuccessMsg(null), 3000);
   };
 
+  const cleanFarmerName = farmerProfile.name?.replace(/\(.*?\)/g, '').trim() || 'ரவி';
+  const greetingName = /ravi/i.test(farmerProfile.name) || /ரவி/.test(farmerProfile.name) ? 'ரவி' : cleanFarmerName;
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 pb-24 min-h-[calc(100vh-64px)] flex flex-col justify-between">
-      {/* Header Context Bar */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-emerald-100 flex flex-wrap items-center justify-between gap-3 mb-4">
+      {/* Header Context Bar with Demo Greeting */}
+      <div className="bg-white rounded-3xl p-5 shadow-sm border border-emerald-100 flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-emerald-950 flex items-center gap-2">
-            <span>{t.vanakkam},</span>
-            <span className="text-emerald-700 underline decoration-amber-400 decoration-2 font-serif">
-              {farmerProfile.name}
-            </span>
+          <h2 className="text-xl sm:text-2xl font-black text-emerald-950 font-serif flex items-center gap-2">
+            <span>வணக்கம் {greetingName} 👋</span>
           </h2>
-          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-            <span className="flex items-center gap-1 text-emerald-800 font-semibold">
+          <p className="text-sm font-bold text-emerald-800 mt-1">
+            உங்கள் விவசாயத்திற்கு என்ன உதவி வேண்டும்?
+          </p>
+          <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+            <span className="flex items-center gap-1 text-emerald-900 font-semibold">
               <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-              {farmerProfile.village ? `${farmerProfile.village}, ` : ''}{farmerProfile.district}
+              {farmerProfile.district}, {farmerProfile.state}
             </span>
             <span>•</span>
             <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
-              {farmerProfile.mainCrop}
+              {farmerProfile.mainCrop} ({farmerProfile.farmSizeAcres} {t.acres})
             </span>
-            <span>•</span>
-            <span>{farmerProfile.farmSizeAcres} {t.acres}</span>
           </div>
         </div>
 
         {weatherData && (
           <div
             onClick={() => setCurrentScreen('weather')}
-            className="flex items-center gap-2.5 bg-amber-50/80 hover:bg-amber-100/80 px-3 py-1.5 rounded-xl border border-amber-200 cursor-pointer transition"
+            className={`flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border cursor-pointer transition ${
+              weatherData.isDemo
+                ? 'bg-amber-50/90 border-amber-300 text-amber-950'
+                : 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+            }`}
           >
             <CloudSun className="w-6 h-6 text-amber-500" />
             <div>
-              <span className="text-sm font-bold text-slate-800 block leading-tight">
-                {weatherData.temperature}°C
-              </span>
-              <span className="text-[10px] text-amber-900 font-medium">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold block leading-tight">
+                  {weatherData.temperature}°C
+                </span>
+                <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase ${weatherData.isDemo ? 'bg-amber-200 text-amber-900' : 'bg-emerald-200 text-emerald-900'}`}>
+                  {weatherData.isDemo ? 'DEMO WEATHER' : 'LIVE'}
+                </span>
+              </div>
+              <span className="text-[10px] font-medium opacity-80 block truncate max-w-[110px]">
                 {weatherData.condition}
               </span>
             </div>
@@ -313,12 +333,12 @@ export const VoiceAssistant: React.FC = () => {
           >
             {/* Farmer Question */}
             {msg.sender === 'farmer' ? (
-              <div className="max-w-[88%] sm:max-w-xl bg-gradient-to-r from-emerald-800 to-emerald-700 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md border border-emerald-600">
-                <div className="flex items-center gap-2 mb-1 text-emerald-200 text-xs font-semibold">
-                  <Mic className="w-3.5 h-3.5" />
-                  <span>விவசாயி கேள்வி (Farmer)</span>
+              <div className="max-w-[90%] sm:max-w-xl bg-gradient-to-r from-emerald-800 to-emerald-700 text-white rounded-3xl rounded-tr-none px-5 py-3.5 shadow-md border border-emerald-600">
+                <div className="flex items-center gap-1.5 mb-1 text-emerald-200 text-xs font-bold">
+                  <Mic className="w-3.5 h-3.5 text-amber-300" />
+                  <span>🎙 நீங்கள் கேட்டது:</span>
                 </div>
-                <p className="text-sm sm:text-base font-medium leading-relaxed font-serif">
+                <p className="text-sm sm:text-base font-semibold leading-relaxed font-serif">
                   "{msg.text}"
                 </p>
               </div>
@@ -328,58 +348,86 @@ export const VoiceAssistant: React.FC = () => {
                 {/* Assistant Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-emerald-700 text-amber-300 font-bold flex items-center justify-center text-sm shadow">
+                    <div className="w-9 h-9 rounded-2xl bg-emerald-700 text-amber-300 font-bold flex items-center justify-center text-base shadow">
                       🌾
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-emerald-950 font-serif">
                         உழவன் குரல் ஆலோசனை
                       </h4>
-                      <span className="text-[11px] text-emerald-700 font-medium">
-                        Uzhavan Kural Agricultural Advisory
+                      <span className="text-[10px] text-emerald-700 font-medium">
+                        Gemini 3.8 Flash • உழவன் வேளாண் நுண்ணறிவு
                       </span>
                     </div>
                   </div>
 
-                  {/* Audio read button */}
+                  {/* Audio read button with exact label requested: 🔊 கேளுங்கள் */}
                   <button
-                    onClick={() => handleSpeakText(msg.id, msg.text + ' ' + (msg.structuredAdvice?.immediateSteps?.join('. ') || ''))}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                    onClick={() => handleSpeakText(msg.id, msg.text + '. ' + (msg.structuredAdvice?.immediateSteps?.join('. ') || ''))}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
                       speakingMessageId === msg.id
                         ? 'bg-amber-500 text-slate-900 animate-pulse'
-                        : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                        : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-300'
                     }`}
                   >
                     {speakingMessageId === msg.id ? (
                       <>
-                        <VolumeX className="w-4 h-4" />
-                        <span>{t.stopAudio}</span>
+                        <VolumeX className="w-4 h-4 text-slate-900" />
+                        <span>⏹️ நிறுத்து</span>
                       </>
                     ) : (
                       <>
                         <Volume2 className="w-4 h-4 text-emerald-700" />
-                        <span>{t.listenAudio} (Voice)</span>
+                        <span>🔊 கேளுங்கள்</span>
                       </>
                     )}
                   </button>
                 </div>
+
+                {/* Clear DEMO DATA transparency notices if live API unavailable */}
+                {msg.isDemoData && msg.demoDataType === 'weather' && (
+                  <div className="mb-3 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-2.5 text-xs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse mt-0.5 shrink-0"></span>
+                    <div>
+                      <strong className="block font-black text-amber-900 tracking-wide text-xs">
+                        🟡 DEMO WEATHER DATA
+                      </strong>
+                      <span className="text-[11px] text-amber-900/90 font-medium">
+                        நேரலை வானிலை API சாவி இல்லாததால் கரூர் பகுதிக்கான மாதிரி வானிலை முன்னறிவிப்பு அடிப்படையில் இந்த ஆலோசனை வழங்கப்பட்டுள்ளது.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {msg.isDemoData && msg.demoDataType === 'market' && (
+                  <div className="mb-3 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-2.5 text-xs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse mt-0.5 shrink-0"></span>
+                    <div>
+                      <strong className="block font-black text-amber-900 tracking-wide text-xs">
+                        🟡 DEMO MARKET DATA
+                      </strong>
+                      <span className="text-[11px] text-amber-900/90 font-medium">
+                        நேரலை Agmarknet API சாவி இல்லாததால் மாதிரி மண்டி விலைகளின் அடிப்படையில் இந்த தகவல் வழங்கப்பட்டுள்ளது.
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Summary narrative */}
                 <p className="text-sm sm:text-base text-slate-800 font-medium leading-relaxed font-serif">
                   {msg.text}
                 </p>
 
-                {/* Structured Sections */}
+                {/* Exact 4 Required Structured Sections */}
                 {msg.structuredAdvice && (
                   <div className="mt-4 space-y-3">
-                    {/* Possible causes */}
+                    {/* 1. 🌾 சாத்தியமான காரணங்கள் */}
                     {msg.structuredAdvice.possibleCauses && msg.structuredAdvice.possibleCauses.length > 0 && (
-                      <div className="bg-amber-50/70 rounded-xl p-3.5 border border-amber-200/80">
-                        <h5 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
-                          <span>{t.possibleCauses}</span>
+                      <div className="bg-amber-50/80 rounded-2xl p-3.5 border border-amber-200">
+                        <h5 className="text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <span>🌾 சாத்தியமான காரணங்கள்</span>
                         </h5>
-                        <ul className="text-xs sm:text-sm text-amber-950 space-y-1 list-disc pl-4">
+                        <ul className="text-xs sm:text-sm text-amber-950 space-y-1.5 list-disc pl-4 font-medium">
                           {msg.structuredAdvice.possibleCauses.map((cause, i) => (
                             <li key={i}>{cause}</li>
                           ))}
@@ -387,14 +435,13 @@ export const VoiceAssistant: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Immediate Steps */}
+                    {/* 2. 💧 இப்போது என்ன செய்யலாம் */}
                     {msg.structuredAdvice.immediateSteps && msg.structuredAdvice.immediateSteps.length > 0 && (
-                      <div className="bg-emerald-50/70 rounded-xl p-3.5 border border-emerald-200">
-                        <h5 className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                          <span>{t.whatToDoNow}</span>
+                      <div className="bg-emerald-50/80 rounded-2xl p-3.5 border border-emerald-200">
+                        <h5 className="text-xs font-bold text-emerald-950 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <span>💧 இப்போது என்ன செய்யலாம்</span>
                         </h5>
-                        <ul className="text-xs sm:text-sm text-emerald-950 space-y-1.5">
+                        <ul className="text-xs sm:text-sm text-emerald-950 space-y-1.5 font-medium">
                           {msg.structuredAdvice.immediateSteps.map((step, i) => (
                             <li key={i} className="flex items-start gap-2">
                               <span className="font-bold text-emerald-700 shrink-0">✓</span>
@@ -405,13 +452,13 @@ export const VoiceAssistant: React.FC = () => {
                       </div>
                     )}
 
-                    {/* What to Monitor */}
+                    {/* 3. 🔎 என்ன கவனிக்க வேண்டும் */}
                     {msg.structuredAdvice.whatToMonitor && msg.structuredAdvice.whatToMonitor.length > 0 && (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs sm:text-sm text-slate-800">
-                        <strong className="text-slate-900 block mb-1 font-bold text-xs uppercase">
-                          👁 {t.whatToMonitor}:
-                        </strong>
-                        <ul className="list-disc pl-4 space-y-0.5 text-slate-700">
+                      <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 text-xs sm:text-sm text-slate-800">
+                        <h5 className="text-slate-900 block mb-1.5 font-bold text-xs uppercase flex items-center gap-1.5">
+                          <span>🔎 என்ன கவனிக்க வேண்டும்:</span>
+                        </h5>
+                        <ul className="list-disc pl-4 space-y-1 text-slate-700 font-medium">
                           {msg.structuredAdvice.whatToMonitor.map((item, i) => (
                             <li key={i}>{item}</li>
                           ))}
@@ -419,13 +466,13 @@ export const VoiceAssistant: React.FC = () => {
                       </div>
                     )}
 
-                    {/* When to Seek Expert Help */}
+                    {/* 4. 👨‍🌾 எப்போது நிபுணரை அணுக வேண்டும் */}
                     {msg.structuredAdvice.whenToSeekExpert && (
-                      <div className="p-3 rounded-xl bg-blue-50 border border-blue-200/80 text-xs sm:text-sm text-blue-950">
-                        <strong className="text-blue-900 block mb-0.5 font-bold text-xs">
-                          🏛 {t.whenToConsultExpert}:
-                        </strong>
-                        <p>{msg.structuredAdvice.whenToSeekExpert}</p>
+                      <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-xs sm:text-sm text-blue-950">
+                        <h5 className="text-blue-900 block mb-1 font-bold text-xs flex items-center gap-1.5">
+                          <span>👨‍🌾 எப்போது நிபுணரை அணுக வேண்டும்:</span>
+                        </h5>
+                        <p className="font-medium">{msg.structuredAdvice.whenToSeekExpert}</p>
                       </div>
                     )}
                   </div>
@@ -434,7 +481,7 @@ export const VoiceAssistant: React.FC = () => {
                 {/* Sources Retrieved Badge */}
                 {msg.sourcesRetrieved && msg.sourcesRetrieved.length > 0 && (
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
-                    <span className="font-semibold text-emerald-800">அறிவுத்தளம்:</span>
+                    <span className="font-semibold text-emerald-800">வேளாண் அறிவுத்தளம்:</span>
                     {msg.sourcesRetrieved.map((src, i) => (
                       <span key={i} className="bg-slate-100 px-2 py-0.5 rounded text-[10px] text-slate-700">
                         {src.title || src.source}
@@ -445,28 +492,52 @@ export const VoiceAssistant: React.FC = () => {
 
                 {/* Response Action Buttons */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleSaveAdvice(msg)}
-                      className="flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-emerald-800 bg-slate-100 hover:bg-emerald-50 px-3 py-1.5 rounded-xl transition"
-                    >
-                      <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{t.saveAdvice}</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleSaveAdvice(msg)}
+                    className="flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-emerald-800 bg-slate-100 hover:bg-emerald-50 px-3 py-1.5 rounded-xl transition"
+                  >
+                    <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{t.saveAdvice}</span>
+                  </button>
 
                   <button
                     onClick={() => handleStartListening()}
-                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition"
+                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-1.5 rounded-xl border border-emerald-200 transition"
                   >
                     <Mic className="w-3.5 h-3.5 text-amber-600" />
-                    <span>{t.askFollowUp}</span>
+                    <span>தொடர் கேள்வி கேட்க</span>
                   </button>
                 </div>
               </div>
             )}
           </div>
         ))}
+
+        {/* Second Demo Scenario Follow-up Prompt Box with Quick Question Buttons */}
+        {activeConversation.length > 1 && (
+          <div className="bg-gradient-to-r from-emerald-50 via-amber-50/50 to-emerald-50 rounded-3xl p-4 sm:p-5 border border-emerald-200/90 text-center shadow-sm animate-in fade-in space-y-3">
+            <span className="text-sm sm:text-base font-bold text-emerald-950 font-serif block">
+              இன்னும் ஏதாவது கேட்க விரும்புகிறீர்களா?
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {[
+                { text: 'நாளைக்கு மழை வருமா?', label: '🌧 நாளைக்கு மழை வருமா?' },
+                { text: 'தண்ணீர் பாய்ச்சலாமா?', label: '💧 தண்ணீர் பாய்ச்சலாமா?' },
+                { text: 'நெல் விலை என்ன?', label: '💰 நெல் விலை என்ன?' },
+                { text: 'உரம் எப்போது போடலாம்?', label: '🌱 உரம் எப்போது போடலாம்?' },
+                { text: 'பூச்சி பிரச்சனை', label: '🐛 பூச்சி பிரச்சனை' },
+              ].map((q, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleProcessVoiceInput(q.text)}
+                  className="bg-white hover:bg-emerald-100 text-emerald-950 border border-emerald-300 hover:border-emerald-500 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold shadow-sm transition flex items-center gap-1.5 active:scale-95"
+                >
+                  <span>{q.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Pipeline Execution Display */}
         {showPipeline && (
@@ -527,35 +598,58 @@ export const VoiceAssistant: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Questions Horizontal Scroll */}
+      {/* Quick Questions Horizontal Scroll matching Demo Scenario */}
       <div className="mb-3">
-        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-          <span>{t.quickQuestions}:</span>
+        <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span className="font-serif">இன்னும் ஏதாவது கேட்க விரும்புகிறீர்களா? (Quick Demo Questions)</span>
+          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            1-Click Demo
+          </span>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {quickQuestions.map((q, idx) => (
             <button
               key={idx}
               onClick={() => handleProcessVoiceInput(q.text)}
-              className="shrink-0 bg-white hover:bg-emerald-50 text-slate-800 border border-slate-200/80 hover:border-emerald-300 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition flex items-center gap-1.5"
+              className="shrink-0 bg-white hover:bg-emerald-50 text-slate-800 border border-slate-200 hover:border-emerald-400 rounded-2xl px-3.5 py-2 text-xs font-bold shadow-sm transition flex items-center gap-1.5 active:scale-95"
             >
               <span>{q.icon}</span>
-              <span className="truncate max-w-[210px]">{q.topic}</span>
+              <span>{q.text}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Central Large Microphone Control Area */}
-      <div className="bg-white rounded-3xl p-5 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center">
-        {/* Dynamic status title */}
-        <div className="mb-3">
+      <div className="bg-white rounded-3xl p-6 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center">
+        {/* 1-Click Live Hackathon Demo Story 1 Trigger */}
+        <div className="w-full max-w-md mb-3">
+          <button
+            onClick={() => handleProcessVoiceInput('என் நெல் வயலில் இலைகள் மஞ்சளாக மாறுது. என்ன செய்யலாம்?')}
+            className="w-full bg-gradient-to-r from-amber-50 via-emerald-50 to-amber-50 hover:from-amber-100 hover:to-emerald-100 border border-amber-300 hover:border-emerald-400 rounded-2xl p-2.5 sm:p-3 text-left transition shadow-sm group flex items-center justify-between gap-2"
+          >
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 block flex items-center gap-1">
+                <span>⚡ நேரலை டெமோ குரல் சோதனை (Demo Voice Query):</span>
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-950 font-serif line-clamp-1">
+                "என் நெல் வயலில் இலைகள் மஞ்சளாக மாறுது. என்ன செய்யலாம்?"
+              </span>
+            </div>
+            <span className="shrink-0 bg-emerald-700 group-hover:bg-emerald-800 text-white text-[11px] font-bold px-3 py-1 rounded-xl shadow transition">
+              கேட்க (Ask)
+            </span>
+          </button>
+        </div>
+
+        {/* Dynamic status title matching exact voice UX */}
+        <div className="mb-2">
           <h3 className="text-base sm:text-lg font-bold text-slate-900 font-serif">
-            {voiceState === 'idle' && 'என்ன கேட்க விரும்புகிறீர்கள்?'}
-            {voiceState === 'listening' && t.listening}
-            {voiceState === 'processing' && t.processingVoice}
-            {voiceState === 'thinking' && t.thinking}
-            {voiceState === 'answer' && t.hereIsAdvice}
+            {voiceState === 'idle' && 'உங்கள் விவசாயத்திற்கு என்ன உதவி வேண்டும்?'}
+            {voiceState === 'listening' && 'கேட்கிறேன்...'}
+            {voiceState === 'processing' && 'உங்கள் கேள்வியை புரிந்துகொள்கிறேன்...'}
+            {voiceState === 'thinking' && 'சிறந்த ஆலோசனையைத் தேடுகிறேன்...'}
+            {voiceState === 'answer' && 'இதோ உங்கள் ஆலோசனை...'}
           </h3>
           {transcript && (
             <p className="text-xs text-emerald-800 font-serif italic mt-1 max-w-md mx-auto">

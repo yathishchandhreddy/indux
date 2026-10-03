@@ -47,6 +47,8 @@ export interface ChatMessage {
   imageUrl?: string;
   topic?: string;
   weatherSnapshot?: string;
+  isDemoData?: boolean;
+  demoDataType?: 'weather' | 'market' | 'general';
 }
 
 export interface ConversationRecord {
@@ -95,6 +97,7 @@ export interface WeatherData {
     harvesting: string;
   };
   isLive: boolean;
+  isDemo?: boolean;
   lastUpdated: string;
 }
 

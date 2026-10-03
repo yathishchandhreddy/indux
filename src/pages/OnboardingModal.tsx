@@ -112,6 +112,35 @@ export const OnboardingModal: React.FC = () => {
 
         {/* Form Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-slate-800">
+          {/* 1-Click Quick Hackathon Demo Profile: Ravi, Karur, Paddy, 2 Acres */}
+          <div className="bg-gradient-to-r from-amber-50 to-emerald-50 p-3.5 rounded-2xl border border-amber-300 flex items-center justify-between gap-2 shadow-sm">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-black text-amber-950">
+                <span>⚡ நேரலை டெமோ சுயவிவரம் (Live Demo Story Profile)</span>
+              </div>
+              <p className="text-[11px] text-slate-700 font-medium mt-0.5">
+                ரவி (Ravi) • கரூர் (Karur), தமிழ்நாடு • நெல் (Paddy) • 2 ஏக்கர் • தமிழ்
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setName('ரவி (Ravi)');
+                setVillage('தொட்டியம்');
+                setDistrict('Karur');
+                setState('Tamil Nadu');
+                setMainCrop('Paddy');
+                setFarmSizeAcres(2);
+                setPrefLang('ta');
+                setLocPermission(true);
+                setMicPermission(true);
+              }}
+              className="shrink-0 bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow transition"
+            >
+              தானாக நிரப்பு (Quick Fill)
+            </button>
+          </div>
+
           {/* Name */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -122,7 +151,7 @@ export const OnboardingModal: React.FC = () => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="எ.கா: யாதிஷ் (Yathish)"
+              placeholder="எ.கா: ரவி (Ravi)"
               className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 text-sm font-medium outline-none transition"
             />
           </div>

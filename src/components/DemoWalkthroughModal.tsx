@@ -26,23 +26,18 @@ export const DemoWalkthroughModal: React.FC = () => {
   if (!showDemoWalkthrough) return null;
 
   const demoSteps = [
-    { num: 1, text: 'Farmer opens Uzhavan Kural', action: () => setCurrentScreen('welcome') },
-    { num: 2, text: 'Selects Tamil-first interface (தமிழ்)', action: () => setLanguage('ta') },
-    { num: 3, text: 'Location set to Karur, Tamil Nadu', action: () => setFarmerProfile({ ...farmerProfile, district: 'Karur', village: 'Thottiyam' }) },
-    { num: 4, text: 'Selects main crop as Paddy (நெல்)', action: () => setFarmerProfile({ ...farmerProfile, mainCrop: 'Paddy' }) },
-    { num: 5, text: 'Opens Voice Assistant with Large Microphone', action: () => setCurrentScreen('voice') },
-    { num: 6, text: 'Asks: "என் நெல் வயலில் இலைகள் மஞ்சளாக மாறுது"', action: () => setCurrentScreen('voice') },
-    { num: 7, text: 'Voice converted to text via speech pipeline' },
-    { num: 8, text: 'AI detects language (Tamil) and agronomic intent' },
-    { num: 9, text: 'RAG retrieves verified TNAU & soil health docs' },
-    { num: 10, text: 'Local weather verified (rain check before fertilizer)' },
-    { num: 11, text: 'Gemini 3.8 Flash structures actionable advice' },
-    { num: 12, text: 'Tamil structured response displayed' },
-    { num: 13, text: 'Text-to-speech speaks advice in clear Tamil' },
-    { num: 14, text: 'Farmer asks follow-up on water drainage' },
-    { num: 15, text: 'Opens Live Mandi Market Prices (சந்தை விலை)', action: () => setCurrentScreen('market') },
-    { num: 16, text: 'Opens Agricultural Weather Advisory (வானிலை)', action: () => setCurrentScreen('weather') },
-    { num: 17, text: 'Demonstrates Multimodal Crop Health (பயிர் நலம்)', action: () => setCurrentScreen('crop-health') },
+    { num: 1, text: 'Open Uzhavan Kural (உழவன் குரல்)', action: () => setCurrentScreen('welcome') },
+    { num: 2, text: 'Farmer Profile: ரவி (Ravi), Karur Tamil Nadu, Paddy, 2 acres, Tamil', action: () => setFarmerProfile({ ...farmerProfile, name: 'ரவி (Ravi)', district: 'Karur', village: 'தொட்டியம் (Thottiyam)', mainCrop: 'Paddy', farmSizeAcres: 2, preferredLanguage: 'ta' }) },
+    { num: 3, text: 'Go to Voice Assistant: "வணக்கம் ரவி 👋" & Large Mic', action: () => setCurrentScreen('voice') },
+    { num: 4, text: 'Farmer speaks: "என் நெல் வயலில் இலைகள் மஞ்சளாக மாறுது. என்ன செய்யலாம்?"', action: () => setCurrentScreen('voice') },
+    { num: 5, text: 'Speech-to-text displays: 🎙 நீங்கள் கேட்டது: "என் நெல் வயலில்..."' },
+    { num: 6, text: 'Gemini answers with 4 sections: 🌾 காரணங்கள், 💧 இப்போது செய்யலாம், 🔎 கவனிக்க, 👨‍🌾 நிபுணர்' },
+    { num: 7, text: 'Click "🔊 கேளுங்கள்" to hear Tamil speech aloud via browser SpeechSynthesis' },
+    { num: 8, text: 'Second scenario: "இன்னும் ஏதாவது கேட்க விரும்புகிறீர்களா?" → "நாளைக்கு மழை வருமா?"', action: () => setCurrentScreen('voice') },
+    { num: 9, text: 'Weather guidance: 🟢 LIVE WEATHER or 🟡 DEMO WEATHER with agricultural rain impact', action: () => setCurrentScreen('weather') },
+    { num: 10, text: 'Market Demo: 🌾 Paddy | 📍 Tamil Nadu | 🏪 Demo Market with "இந்த விலையில் நான் என்ன செய்யலாம்?"', action: () => setCurrentScreen('market') },
+    { num: 11, text: 'Crop Health Diagnosis: Camera / leaf upload with multimodal Gemini vision', action: () => setCurrentScreen('crop-health') },
+    { num: 12, text: 'Settings: 🟢 DEMO MODE toggle & Demo Control status for judges', action: () => setCurrentScreen('settings') },
   ];
 
   return (

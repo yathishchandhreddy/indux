@@ -50,12 +50,40 @@ app.get('/api/weather', async (req: Request, res: Response) => {
   const city = (req.query.city as string) || 'Karur';
 
   if (!apiKey) {
+    // Demo Weather Data clearly labeled
+    const demoWeatherData = {
+      city: 'Karur (கரூர்)',
+      district: 'Karur',
+      temperature: 31,
+      feelsLike: 33,
+      humidity: 64,
+      windSpeed: 11,
+      condition: 'Partly Cloudy (பகுதி மேகமூட்டம்)',
+      description: 'Partly cloudy sky with light agrarian breeze',
+      rainProbability: 25,
+      isLive: false,
+      isDemo: true,
+      lastUpdated: new Date().toISOString(),
+      forecast: [
+        { day: 'இன்று (Today)', date: 'Oct 3', tempMax: 33, tempMin: 24, condition: 'Partly Cloudy', rainProbability: 25 },
+        { day: 'நாளை (Tomorrow)', date: 'Oct 4', tempMax: 34, tempMin: 25, condition: 'Scattered Clouds', rainProbability: 20 },
+        { day: 'நாள் 3 (Oct 5)', date: 'Oct 5', tempMax: 30, tempMin: 23, condition: 'Light Rain', rainProbability: 65 },
+        { day: 'நாள் 4 (Oct 6)', date: 'Oct 6', tempMax: 32, tempMin: 24, condition: 'Sunny', rainProbability: 10 },
+      ],
+      agriculturalAdvice: {
+        irrigation: 'மண்ணின் மேல் அடுக்கு காய்ந்திருந்தால் மட்டும் மாலை வேளையில் மிதமான நீர் பாய்ச்சவும்.',
+        spraying: 'காற்றின் வேகம் குறைவாக (11 km/h) உள்ளதால் காலை 7 முதல் 10 மணிக்குள் இலைவழி தெளிப்பு செய்யலாம்.',
+        fertilizer: 'நாளை மழை வாய்ப்பு குறைவு என்பதால் மேலுரமிடலாம்; 3-ம் நாள் மழை வாய்ப்பை கவனிக்கவும்.',
+        harvesting: 'வானிலை சீராக உள்ளதால் அறுவடை பணிகளை தொடரலாம்.',
+      },
+    };
+
     return res.status(200).json({
       configured: false,
       isLive: false,
-      message: 'Live weather data unavailable. Please configure OpenWeatherMap API in .env (OPENWEATHER_API_KEY).',
-      sampleAvailable: true,
-      data: null,
+      isDemo: true,
+      message: 'Live weather API not configured. Displaying clearly labeled Demo Weather Data.',
+      data: demoWeatherData,
     });
   }
 
@@ -80,6 +108,7 @@ app.get('/api/weather', async (req: Request, res: Response) => {
       description: raw.weather[0]?.description || 'Clear sky',
       rainProbability: raw.rain ? 80 : 15,
       isLive: true,
+      isDemo: false,
       lastUpdated: new Date().toISOString(),
       forecast: [
         { day: 'Today', date: 'Oct 3', tempMax: Math.round(raw.main.temp_max), tempMin: Math.round(raw.main.temp_min), condition: raw.weather[0]?.main || 'Clear' },
@@ -95,13 +124,14 @@ app.get('/api/weather', async (req: Request, res: Response) => {
       },
     };
 
-    return res.json({ configured: true, isLive: true, data: weatherData });
+    return res.json({ configured: true, isLive: true, isDemo: false, data: weatherData });
   } catch (error: any) {
     console.error('Weather fetch error:', error);
     return res.status(200).json({
       configured: true,
       isLive: false,
-      message: 'Weather service connection failed. Please check network or city parameters.',
+      isDemo: true,
+      message: 'Weather service connection failed. Using demo data fallback.',
       error: error.message,
       data: null,
     });
@@ -203,28 +233,38 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-    // Check if live Gemini can be called
-    if (apiKey && !isDemo) {
-      const ai = new GoogleGenAI({ apiKey });
+    // Call live Gemini 3.8 Flash (Works in both live and demo mode)
+    if (apiKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
 
-      const systemPrompt = `You are "Uzhavan Kural Agricultural AI Assistant" (உழவன் குரல் விவசாய குரல் தோழன்), a specialized expert agricultural voice companion created specifically for Indian and Tamil Nadu farmers.
+        const systemPrompt = `You are "Uzhavan Kural Agricultural AI Assistant" (உழவன் குரல் விவசாய குரல் தோழன்), a specialized expert agricultural voice companion created specifically for Indian and Tamil Nadu farmers.
 
 CORE PRINCIPLES:
 1. PRIMARY LANGUAGE: Respond strictly in the farmer's preferred language: "${language}". If language is "ta" (Tamil), speak in warm, simple, natural, conversational spoken Tamil that any farmer can easily understand. Avoid heavy high-formal bureaucratic Tamil or english jargon.
 2. FARMER PROFILE CONTEXT:
-   - Farmer Name: ${farmerProfile?.name || 'Farmer'}
-   - Location: ${farmerProfile?.village || ''}, ${farmerProfile?.district || 'Tamil Nadu'}, ${farmerProfile?.state || 'India'}
+   - Farmer Name: ${farmerProfile?.name || 'ரவி (Ravi)'}
+   - Location: ${farmerProfile?.village || ''}, ${farmerProfile?.district || 'Karur'}, ${farmerProfile?.state || 'Tamil Nadu'}
    - Main Crop: ${farmerProfile?.mainCrop || 'Paddy'}
    - Farm Size: ${farmerProfile?.farmSizeAcres || '2'} acres
-3. WEATHER CONTEXT (Verified from weather service):
-   - ${weatherContext ? JSON.stringify(weatherContext) : 'Weather API not active'}
-   - CRITICAL: Never fabricate weather. If rain is expected, explicitly warn against applying fertilizer or spraying pesticides (மழை நீரில் மருந்து அடித்துச் செல்லும்).
+3. WEATHER CONTEXT:
+   - Weather status: ${weatherContext ? JSON.stringify(weatherContext) : 'Weather API not active'}
+   - STRICT DEMO TRANSPARENCY RULE:
+     If the farmer asks about tomorrow's rain or weather (e.g. 'நாளைக்கு மழை வருமா?'):
+     If the weather source is demo/fallback (weatherContext isDemo === true or isLive === false):
+     You MUST explicitly begin or include the label: "மாதிரி வானிலை விபரத்தின்படி (DEMO WEATHER DATA):"
+     State clearly that this is based on demonstration sample data for Karur (நாளை 20% மழை வாய்ப்பு, வெப்பநிலை 34°C, லேசான மேகங்கள்).
+     Never claim demo weather is real satellite telemetry!
+     Explain the agrarian implication: since tomorrow has low rain risk, irrigation or fertilizer application is safe, but note that day 3 (Oct 5) shows 65% rain probability.
 4. MARKET CONTEXT:
-   - ${marketContext ? JSON.stringify(marketContext) : 'Market benchmark available'}
+   - Market status: ${marketContext ? JSON.stringify(marketContext) : 'Market benchmark available'}
+   - If market prices or sales are asked (e.g. 'நெல் விலை என்ன?'):
+     You MUST state: "மாதிரி சந்தை விபரத்தின்படி (DEMO MARKET DATA):"
+     Quote Karur regulated market benchmark: ₹2,280 - ₹2,650/quintal (Average ₹2,480). Explain drying grain to 12-14% moisture and exploring e-NAM / direct purchase centers. Never claim demo prices are real live APMC prices.
 5. AGRICULTURAL ACCURACY & SAFETY:
    - Never confidently invent facts or diagnose diseases with 100% certainty from text alone.
    - For crop symptoms (e.g. yellow leaves, pests), provide probable causes, immediate low-risk steps, what to observe, and when to consult the local Agricultural Extension Officer (வேளாண்மை அலுவலர்).
-   - Prefer organic and biological solutions first (e.g. Panchagavya, Neem seed kernel extract NSKE, Trichoderma viride, Pseudmonas, pheromone traps, water drainage).
+   - Prefer organic and biological solutions first (e.g. Panchagavya, Neem seed kernel extract NSKE 5%, Trichoderma viride, Pseudmonas, pheromone traps, water drainage).
    - If recommending chemical inputs, emphasize wearing protective gear and adhering strictly to recommended dosage.
    - If key information is missing (e.g., crop age, soil type), ask a polite follow-up question.
 6. CULTURAL WISDOM:
@@ -236,65 +276,67 @@ ${ragContextStr || 'General TNAU and agrarian advisory guidelines apply.'}
 OUTPUT FORMAT:
 You MUST return your answer in valid JSON with these exact keys:
 {
-  "summary": "Brief warm conversational response in ${language} (2-3 sentences)",
-  "possibleCauses": ["Cause 1 in ${language}", "Cause 2 in ${language}"],
-  "immediateSteps": ["Action 1 in ${language}", "Action 2 in ${language}", "Action 3 in ${language}"],
-  "whatToMonitor": ["Sign to watch for 1 in ${language}", "Sign to watch for 2 in ${language}"],
-  "whenToSeekExpert": "Advice on when to contact Agricultural Extension Officer in ${language}",
-  "organicAlternatives": ["Organic remedy 1 in ${language}", "Organic remedy 2 in ${language}"],
-  "cautionNotes": "Safety / weather warning in ${language}",
-  "followUpQuestion": "Polite follow-up question if needed, or empty string"
+  "summary": "Warm, direct, spoken Tamil advice answering the farmer's specific question (2-3 sentences)",
+  "possibleCauses": ["Cause 1 in simple Tamil", "Cause 2 in simple Tamil"],
+  "immediateSteps": ["Action 1 in simple Tamil", "Action 2 in simple Tamil", "Action 3 in simple Tamil"],
+  "whatToMonitor": ["Observation point 1 in simple Tamil", "Observation point 2 in simple Tamil"],
+  "whenToSeekExpert": "Advice on when to contact local Agricultural Extension Officer in simple Tamil",
+  "organicAlternatives": ["Organic remedy 1", "Organic remedy 2"],
+  "cautionNotes": "Safety / weather warning in simple Tamil"
 }`;
 
-      // Build conversation history for multi-turn
-      const contents: any[] = [];
-      for (const turn of conversationHistory.slice(-4)) {
+        // Build conversation history for multi-turn
+        const contents: any[] = [];
+        for (const turn of conversationHistory.slice(-4)) {
+          contents.push({
+            role: turn.sender === 'farmer' ? 'user' : 'model',
+            parts: [{ text: turn.text }],
+          });
+        }
         contents.push({
-          role: turn.sender === 'farmer' ? 'user' : 'model',
-          parts: [{ text: turn.text }],
+          role: 'user',
+          parts: [{ text: message }],
         });
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: 'application/json',
+            temperature: 0.3,
+          },
+        });
+
+        const rawText = response.text || '{}';
+        let structured: any;
+        try {
+          structured = JSON.parse(rawText);
+        } catch (e) {
+          structured = {
+            summary: rawText,
+            immediateSteps: ['வயல் தண்ணீரை வடிய வைத்து காற்றோட்டம் தரவும்', 'வேளாண் அலுவலரை அணுகவும்'],
+            whatToMonitor: ['இலைகளின் நிற மாற்றம்'],
+            whenToSeekExpert: 'அறிகுறிகள் 3 நாட்களுக்கு மேல் நீடித்தால் வேளாண் அலுவலகத்தை அணுகவும்.',
+          };
+        }
+
+        return res.json({
+          success: true,
+          isDemo: Boolean(isDemo),
+          response: structured.summary,
+          structuredAdvice: structured,
+          detectedLanguage: language,
+          sourcesRetrieved: matchedDocs.map(d => ({
+            title: d.titleTamil,
+            snippet: d.contentTamil.slice(0, 180),
+            source: d.source,
+          })),
+          audioText: `${structured.summary} ${structured.immediateSteps?.slice(0, 2).join('. ') || ''}`,
+        });
+      } catch (geminiError) {
+        console.warn('Live Gemini call fallback to offline demo response:', geminiError);
       }
-      contents.push({
-        role: 'user',
-        parts: [{ text: message }],
-      });
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          systemInstruction: systemPrompt,
-          responseMimeType: 'application/json',
-          temperature: 0.3,
-        },
-      });
-
-      const rawText = response.text || '{}';
-      let structured: any;
-      try {
-        structured = JSON.parse(rawText);
-      } catch (e) {
-        structured = {
-          summary: rawText,
-          immediateSteps: ['மண்ணின் ஈரப்பதத்தை சரிபார்க்கவும்', 'வேளாண் அலுவலரை அணுகவும்'],
-          whatToMonitor: ['இலைகளின் நிற மாற்றம்'],
-          whenToSeekExpert: 'அறிகுறிகள் 3 நாட்களுக்கு மேல் நீடித்தால் அணுகவும்.',
-        };
-      }
-
-      return res.json({
-        success: true,
-        isDemo: false,
-        response: structured.summary,
-        structuredAdvice: structured,
-        detectedLanguage: language,
-        sourcesRetrieved: matchedDocs.map(d => ({
-          title: d.titleTamil,
-          snippet: d.contentTamil.slice(0, 180),
-          source: d.source,
-        })),
-        audioText: `${structured.summary} ${structured.immediateSteps?.slice(0, 2).join('. ') || ''}`,
-      });
     }
 
     // Demo Mode Fallback: Rich domain-grounded response
@@ -316,57 +358,66 @@ app.post('/api/crop-health', async (req: Request, res: Response) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
     if (apiKey && imageBase64) {
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = `You are the Crop Pathology expert for Uzhavan Kural.
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const prompt = `You are the Crop Pathology expert for Uzhavan Kural.
 Analyze this crop image and symptoms for crop: "${cropName}".
 Farmer reported symptoms: "${symptoms || 'Visual inspection requested'}".
-Respond in language: "${language}".
+Respond strictly in language: "${language}".
 
 Strict Rules:
-- Never claim a 100% definitive laboratory diagnosis from photo alone. Provide most probable causes.
-- Recommend safe, low-risk cultural and organic practices first (drainage, Panchagavya, neem oil, Trichoderma).
-- Clearly mention when the farmer should take a leaf sample to the local Assistant Director of Agriculture (ADA) / TNAU KVK center.
+- Never claim a 100% definitive laboratory diagnosis from photo alone.
+- Provide:
+  1. Possible causes (சாத்தியமான காரணங்கள்)
+  2. Observed symptoms (கண்டறியப்பட்ட அறிகுறிகள்)
+  3. Low-risk immediate steps (குறைந்த ஆபத்து உடனடி தீர்வுகள்: drainage, Panchagavya, NSKE 5%, Trichoderma)
+  4. What additional information is needed (தேவைப்படும் கூடுதல் விவரங்கள்: crop age, soil moisture)
+  5. When to consult an agricultural expert (வேளாண்மை அலுவலரை எப்போது அணுக வேண்டும்)
 
-Return JSON:
+Return JSON with these exact keys:
 {
-  "summary": "Clear, reassuring explanation in ${language}",
+  "summary": "Clear, reassuring spoken explanation in ${language}",
   "possibleCauses": ["Cause 1", "Cause 2"],
+  "observedSymptoms": ["Symptom 1", "Symptom 2"],
   "immediateSteps": ["Step 1", "Step 2", "Step 3"],
-  "whatToMonitor": ["Watch 1", "Watch 2"],
-  "whenToSeekExpert": "When to visit the agricultural office",
-  "confidenceAssessment": "Visual indication only - physical verification required"
+  "additionalInfoNeeded": ["Question or data 1", "Question or data 2"],
+  "whenToSeekExpert": "When to visit the local agricultural office",
+  "confidenceAssessment": "Preliminary Visual Indication (கள ஆய்வு மட்டுமே)"
 }`;
 
-      const contents = [
-        {
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: imageBase64.replace(/^data:image\/\w+;base64,/, ''),
+        const contents = [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: imageBase64.replace(/^data:image\/\w+;base64,/, ''),
+                },
               },
-            },
-            { text: prompt },
-          ],
-        },
-      ];
+              { text: prompt },
+            ],
+          },
+        ];
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          responseMimeType: 'application/json',
-          temperature: 0.2,
-        },
-      });
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents,
+          config: {
+            responseMimeType: 'application/json',
+            temperature: 0.2,
+          },
+        });
 
-      const structured = JSON.parse(response.text || '{}');
-      return res.json({
-        success: true,
-        isDemo: false,
-        diagnosis: structured,
-      });
+        const structured = JSON.parse(response.text || '{}');
+        return res.json({
+          success: true,
+          isDemo: false,
+          diagnosis: structured,
+        });
+      } catch (visionErr) {
+        console.warn('Gemini vision error, falling back to demo diagnostic:', visionErr);
+      }
     }
 
     // Fallback diagnosis when image is simulated or offline
@@ -377,6 +428,9 @@ Return JSON:
       possibleCauses: language === 'ta'
         ? ['தழைச்சத்து (நைட்ரஜன்) அல்லது துத்தநாக பற்றாக்குறை', 'அதிக நீர் தேக்கத்தால் வேர் அழுகல் அல்லது மூச்சுத்திணறல்', 'சாறு உறிஞ்சும் பூச்சிகளின் ஆரம்ப தாக்குதல்']
         : ['Nitrogen or micronutrient deficiency', 'Root asphyxiation from stagnant water', 'Early sucking pest damage'],
+      observedSymptoms: language === 'ta'
+        ? ['அடி இலைகளின் நுனி முதல் நடுநரம்பு வரை மஞ்சள் நிறமாதல்', 'தூர் கட்டும் திறனில் லேசான சுணக்கம்', 'இலையின் நுனியில் காய்ந்த பழுப்பு திட்டுக்கள்']
+        : ['Yellowing along lower leaf midribs', 'Mild tillering stagnation', 'Brown tips on affected blades'],
       immediateSteps: language === 'ta'
         ? [
             'வயலில் தண்ணீர் தேங்கி இருந்தால் உடனடியாக 2 நாட்கள் வடிய வைத்து நிலத்திற்கு காற்றோட்டம் தரவும்.',
@@ -388,6 +442,9 @@ Return JSON:
             'Apply 5% Neem Seed Kernel Extract (NSKE) or Panchagavya 3% as a mild foliar tonic.',
             'Avoid excessive chemical nitrogen which can exacerbate pest infestation.',
           ],
+      additionalInfoNeeded: language === 'ta'
+        ? ['பயிர் நடவு செய்து எத்தனை நாட்கள் ஆகிறது?', 'வயல் மண்ணில் கார அமிலத்தன்மை (pH) அல்லது களர் நிலை உள்ளதா?']
+        : ['Crop age (Days After Sowing / Transplanting)?', 'Soil pH or drainage condition?'],
       whatToMonitor: language === 'ta'
         ? ['இலைகளின் நுனி முதல் அடி வரை மஞ்சள் நிறம் பரவுகிறதா என்று கவனிக்கவும்', 'இலையின் அடிப்புறத்தில் பூச்சிகள் அல்லது கூடுகள் உள்ளதா என பாருங்கள்']
         : ['Monitor if yellowing spreads along midribs', 'Inspect leaf undersides for thrips or honeydew'],
@@ -499,23 +556,23 @@ function generateRealisticDemoResponse(message: string, farmerProfile: any, lang
       'வேப்பங்கொட்டை கரைசல் 5% (NSKE) பூச்சி தாக்குதலை தடுக்க',
     ];
     cautionNotes = 'பயிர் காய்ச்சலும் பாய்ச்சலுமாக இருக்க வேண்டும்; எப்போதும் அதிக நீர் தேக்கக் கூடாது.';
-  } else if (lower.includes('மழை') || lower.includes('rain') || lower.includes('வானிலை') || lower.includes('உரம்')) {
-    summary = `உங்கள் பகுதியில் அடுத்த 24 மணி நேரத்திற்குள் மழை வாய்ப்பு இருந்தால், இப்போது ரசாயன உரம் அல்லது பூச்சி மருந்து தெளிப்பதைத் தவிர்ப்பது மிக நல்லது. மழையால் மருந்து அடித்துச் செல்லப்பட்டு வீணாகும்.`;
+  } else if (lower.includes('மழை') || lower.includes('rain') || lower.includes('வானிலை') || lower.includes('தண்ணீர்')) {
+    summary = `மாதிரி வானிலை விபரத்தின்படி (DEMO WEATHER DATA): நாளை கரூர் பகுதியில் 20% மட்டுமே மழை வாய்ப்பு உள்ளது (வெப்பநிலை 34°C, லேசான மேகங்கள்). நாளை பெரிய மழை பெய்ய வாய்ப்பில்லை என்பதால் பயிருக்கு மிதமான நீர் பாய்ச்சலாம்; ஆனால் 3-வது நாள் (Oct 5) 65% மழை வாய்ப்பு இருப்பதால் வடிகால்களை தயாராக வைக்கவும்.`;
     possibleCauses = [
-      'வானிலை மேகமூட்டம் மற்றும் ஈரப்பதம் அதிகரிப்பு',
-      'மழையால் மண்ணில் தழைச்சத்து அடித்துச் செல்லப்படும் ஆபத்து',
+      'வானிலை மாதிரி முன்னறிவிப்பின்படி லேசான சிதறிய மேகங்கள் (20% மழை வாய்ப்பு)',
+      'காற்றின் வேகம் 11 km/h ஆக மிதமாக உள்ளது',
     ];
     immediateSteps = [
-      'மேலுரம் இடுவதை மழை நிற்கும் வரை 1-2 நாட்கள் தள்ளி வைக்கவும்.',
-      'வயல் வரப்புகளை பலப்படுத்தி அதிக மழைநீர் எளிதாக வடிய வடிகால் வசதி செய்யவும்.',
-      'வானிலை சீரானதும் காலை 7-10 மணிக்குள் உரம் அல்லது மருந்து தெளிக்கவும்.',
+      'நாளை பெரிய மழை ஆபத்து இல்லை என்பதால் தேவைப்பட்டால் மிதமான நீர் பாய்ச்சலாம்.',
+      'காலை 7-10 மணிக்குள் இலைவழி தெளிப்பு அல்லது மேலுரமிடலாம்.',
+      '3-ம் நாள் மழை வாய்ப்பு உள்ளதால் வயல் வரப்பு வடிகால்களை தூர்வாரி வைக்கவும்.',
     ];
-    whatToMonitor = ['வானிலை மாற்றங்கள் மற்றும் மழை பொழிவு அளவு'];
-    whenToSeekExpert = 'தொடர் அடைமழையால் பயிர் நீரில் மூழ்கினால் பயிர் காப்பீடு (PMFBY) வழிகாட்டலுக்கு வேளாண் அலுவலரை தொடர்பு கொள்ளவும்.';
+    whatToMonitor = ['வானில் கருமேகங்கள் திரளுகிறதா என மாலை வேளையில் கவனிக்கவும்'];
+    whenToSeekExpert = 'அதிக அடைமழை அல்லது புயல் முன்னெச்சரிக்கை வந்தால் வட்டார வேளாண்மை அலுவலரை அணுகவும்.';
     organicAlternatives = ['மழை நின்ற பிறகு ஜீவாமிர்தம் அல்லது மண்புழு உரம் இடுதல்'];
-    cautionNotes = 'மழையின் போது ரசாயன உரம் போட்டால் உரம் வேருக்கு கிடைக்காமல் நிலத்தடி நீரை மாசுபடுத்தும்.';
+    cautionNotes = 'இது மாதிரி வானிலை தரவு (DEMO WEATHER DATA); நிஜ வானிலையை சரிபார்க்கவும்.';
   } else if (lower.includes('விலை') || lower.includes('price') || lower.includes('சந்தை') || lower.includes('market')) {
-    summary = `தற்போது கரூர் மற்றும் சுற்றுவட்டார ஒழுங்குமுறை விற்பனைக் கூடங்களில் ${crop} குவிண்டாலுக்கு ₹2,280 முதல் ₹2,650 வரை விற்பனையாகிறது. சராசரி மாடல் விலை ₹2,480.`;
+    summary = `மாதிரி சந்தை விபரத்தின்படி (DEMO MARKET DATA): கரூர் மற்றும் சுற்றுவட்டார ஒழுங்குமுறை விற்பனைக் கூடங்களில் ${crop} குவிண்டாலுக்கு ₹2,280 முதல் ₹2,650 வரை விற்பனையாகிறது (சராசரி மாடல் விலை ₹2,480).`;
     possibleCauses = ['சந்தையில் வரத்து மற்றும் பருவ தேவை'];
     immediateSteps = [
       'தானியத்தின் ஈரப்பதம் 12-14% க்குள் இருக்கும்படி நன்கு உலர்த்தி சந்தைக்கு கொண்டு செல்லவும்.',
@@ -525,7 +582,7 @@ function generateRealisticDemoResponse(message: string, farmerProfile: any, lang
     whatToMonitor = ['தினசரி சந்தை வரத்து மற்றும் ஈரப்பத தரம்'];
     whenToSeekExpert = 'அரசு நேரடி நெல் கொள்முதல் நிலைய (DPC) தொடக்கம் பற்றி அறிய வட்டார வேளாண் அலுவலகத்தை தொடர்பு கொள்ளவும்.';
     organicAlternatives = ['இயற்கை விவசாய விளைபொருட்களுக்கு உழவர் சந்தையில் கூடுதல் விலை கிடைக்கும்'];
-    cautionNotes = 'ஈரப்பதம் அதிகமாக இருந்தால் வியாபாரிகள் விலையைக் குறைப்பார்கள்; நன்கு காயவைப்பது அவசியம்.';
+    cautionNotes = 'இது மாதிரி சந்தை தரவு (DEMO MARKET DATA); நிஜ மண்டி விலையை உள்ளூர் சந்தையில் உறுதி செய்யவும்.';
   } else {
     summary = `வணக்கம் ${farmerProfile?.name || 'விவசாயி'}. உங்கள் கேள்வி உழவன் குரல் விவசாய அறிவுத் தளத்தில் பதிவு செய்யப்பட்டது. "சுழன்றும்ஏர்ப் பின்னது உலகம்" - உழவர் நலனே நாட்டின் வளம்.`;
     possibleCauses = ['பயிரின் வளர்ச்சிப் பருவத்திற்கு ஏற்ப சரியான பராமரிப்பு தேவை'];
