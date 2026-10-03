@@ -1,0 +1,6 @@
+{
+  "name": "Uzhavan Kural - The Voice of the Soil",
+  "description": "AI-powered multilingual voice-first agricultural advisory assistant for Indian farmers with Tamil-first experience, real-time weather, market insights, and crop health diagnostics.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
